@@ -47,9 +47,9 @@ namespace EntityCache.Caching
         /// </summary>
         public CachedField()
         {
-            _cachedSourceOfTruth = default(TType);
-            _localChange = default(TType);
-            _externalChange = default(TType);
+            _cachedSourceOfTruth = default;
+            _localChange = default;
+            _externalChange = default;
             _state = State.Uninitialized;
         }
 
@@ -59,8 +59,8 @@ namespace EntityCache.Caching
         public CachedField(TType value)
         {
             _cachedSourceOfTruth = value;
-            _localChange = default(TType);
-            _externalChange = default(TType);
+            _localChange = default;
+            _externalChange = default;
             _state = State.Initialized;
         }
 
@@ -76,8 +76,8 @@ namespace EntityCache.Caching
         public void Reset()
         {
             _state = State.Initialized;
-            _localChange = default(TType);
-            _externalChange = default(TType);
+            _localChange = default;
+            _externalChange = default;
         }
 
         public void Reset(object value)
@@ -140,7 +140,7 @@ namespace EntityCache.Caching
             if (_state == State.Conflicted)
             {
                 // if this is already conflicted, lets forget about the previous conflict and try pulling anew
-                _externalChange = default(TType);
+                _externalChange = default;
                 _state = State.Modified;
             }
 
@@ -180,7 +180,7 @@ namespace EntityCache.Caching
                 // when solving a conflict, we apply the external change as a local change, because we still remain dirty
                 _state = State.Modified;
                 _localChange = _externalChange;
-                _externalChange = default(TType);
+                _externalChange = default;
             }
         }
 
@@ -189,7 +189,7 @@ namespace EntityCache.Caching
             if (IsConflicted())
             {
                 _state = State.Modified;
-                _externalChange = default(TType);
+                _externalChange = default;
             }
         }
 
@@ -210,12 +210,12 @@ namespace EntityCache.Caching
 
         public override bool Equals(object obj)
         {
-            switch (obj)
+            return obj switch
             {
-                case TType value: return Equals(Value, value);
-                case CachedField<TType> backingField: return Equals(backingField);
-                default: return false;
-            }
+                TType value => Equals(Value, value),
+                CachedField<TType> backingField => Equals(backingField),
+                _ => false
+            };
         }
 
         public override string ToString()

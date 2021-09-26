@@ -1,5 +1,4 @@
-﻿using EntityCache.Exceptions;
-using EntityCache.Interfaces;
+﻿using EntityCache.Interfaces;
 using EntityCache.Mapping;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,7 +15,7 @@ namespace EntityCache.Caching
         /// <summary>
         ///     This methods adds the given entity and all referenced entities recursively.
         ///     Use this method if you can't add all new entities separately (or for comfort).
-        ///     The type mapping must be contained in <see cref="TypeMappingBase._typeMappings"/>!
+        ///     The type mapping must be configured beforehand.
         /// </summary>
         public void AddCachedEntity(ICachedEntity cachedEntity)
         {
@@ -59,21 +58,19 @@ namespace EntityCache.Caching
             var conflicts = new List<PullConflicts>();
             if (Database.Exists)
             {
-                using (DbContext context = Database.CreateDbContext())
+                using DbContext context = Database.CreateDbContext();
+                var referencedCachedEntities = new List<ICachedEntity>();
+                foreach (IEntityCollectionMapping entityCollectionMappingBase in Mapper.Configuration.EntityMappings)
                 {
-                    var referencedCachedEntities = new List<ICachedEntity>();
-                    foreach (IEntityCollectionMapping entityCollectionMappingBase in Mapper.Configuration.EntityMappings)
-                    {
-                        referencedCachedEntities.AddRange(PullFromContext(context, entityCollectionMappingBase, conflicts, force));
-                    }
+                    referencedCachedEntities.AddRange(PullFromContext(context, entityCollectionMappingBase, conflicts, force));
+                }
 
-                    foreach (ICachedEntity referencedCachedEntity in referencedCachedEntities)
-                    {
-                        IEntityCollectionMapping mapping =
-                            Mapper.Configuration.GetEntityMappingByCachedEntityType(referencedCachedEntity.GetType());
-                        Mapper.PullCachedEntityAndReferencesFromContext(this, context, referencedCachedEntity, mapping, conflicts,
-                                                               force);
-                    }
+                foreach (ICachedEntity referencedCachedEntity in referencedCachedEntities)
+                {
+                    IEntityCollectionMapping mapping =
+                        Mapper.Configuration.GetEntityMappingByCachedEntityType(referencedCachedEntity.GetType());
+                    Mapper.PullCachedEntityAndReferencesFromContext(this, context, referencedCachedEntity, mapping, conflicts,
+                        force);
                 }
             }
 
@@ -87,21 +84,19 @@ namespace EntityCache.Caching
 
             if (Database.Exists)
             {
-                using (DbContext context = Database.CreateDbContext())
+                using DbContext context = Database.CreateDbContext();
+                IEntityCollectionMapping mapping = Mapper.Configuration.GetEntityMappingByCachedEntityType(cachedEntity.GetType());
+
+                List<ICachedEntity> referencedCachedEntities =
+                    PullCachedEntityFromContext(context, cachedEntity, mapping, conflicts, force);
+
+                foreach (ICachedEntity referencedCachedEntity in referencedCachedEntities)
                 {
-                    IEntityCollectionMapping mapping = Mapper.Configuration.GetEntityMappingByCachedEntityType(cachedEntity.GetType());
-
-                    List<ICachedEntity> referencedCachedEntities =
-                        PullCachedEntityFromContext(context, cachedEntity, mapping, conflicts, force);
-
-                    foreach (ICachedEntity referencedCachedEntity in referencedCachedEntities)
-                    {
-                        Mapper.PullCachedEntityAndReferencesFromContext(this, context, referencedCachedEntity, mapping, conflicts,
-                                                               force);
-                    }
-
-                    return conflicts;
+                    Mapper.PullCachedEntityAndReferencesFromContext(this, context, referencedCachedEntity, mapping, conflicts,
+                        force);
                 }
+
+                return conflicts;
             }
 
             return conflicts;
@@ -113,21 +108,19 @@ namespace EntityCache.Caching
             var conflicts = new List<PullConflicts>();
             if (Database.Exists)
             {
-                using (DbContext context = Database.CreateDbContext())
+                using DbContext context = Database.CreateDbContext();
+                var referencedCachedEntities = new List<ICachedEntity>();
+                referencedCachedEntities.AddRange(PullFromContext<TCachedEntity>(context, conflicts, force));
+
+                foreach (ICachedEntity referencedCachedEntity in referencedCachedEntities)
                 {
-                    var referencedCachedEntities = new List<ICachedEntity>();
-                    referencedCachedEntities.AddRange(PullFromContext<TCachedEntity>(context, conflicts, force));
-
-                    foreach (ICachedEntity referencedCachedEntity in referencedCachedEntities)
-                    {
-                        IEntityCollectionMapping mapping =
-                            Mapper.Configuration.GetEntityMappingByCachedEntityType(referencedCachedEntity.GetType());
-                        Mapper.PullCachedEntityAndReferencesFromContext(this, context, referencedCachedEntity, mapping, conflicts,
-                                                               force);
-                    }
-
-                    return conflicts;
+                    IEntityCollectionMapping mapping =
+                        Mapper.Configuration.GetEntityMappingByCachedEntityType(referencedCachedEntity.GetType());
+                    Mapper.PullCachedEntityAndReferencesFromContext(this, context, referencedCachedEntity, mapping, conflicts,
+                        force);
                 }
+
+                return conflicts;
             }
 
             return conflicts;
@@ -140,39 +133,37 @@ namespace EntityCache.Caching
                 return false;
             }
 
-            using (DbContext context = Database.CreateDbContext())
+            using DbContext context = Database.CreateDbContext();
+            var newSavepoint = DateTime.UtcNow;
+            var newEntitiesPool = new ObjectPool();
+
+            // we first push all new entities to the database and save the changes
+            // this will ensure that entities, that are referenced by an entity with updates, can be retrieved from the database context
+            // as it is done below in PushUpdatesToContext!
+            foreach (IEntityCollectionMapping entityCollectionMappingBase in Mapper.Configuration.EntityMappings)
             {
-                var newSavepoint = DateTime.UtcNow;
-                var newEntitiesPool = new ObjectPool();
+                PushNewEntitiesToContext(context, entityCollectionMappingBase, newSavepoint, newEntitiesPool);
+            }
 
-                // we first push all new entities to the database and save the changes
-                // this will ensure that entities, that are referenced by an entity with updates, can be retrieved from the database context
-                // as it is done below in PushUpdatesToContext!
-                foreach (IEntityCollectionMapping entityCollectionMappingBase in Mapper.Configuration.EntityMappings)
-                {
-                    PushNewEntitiesToContext(context, entityCollectionMappingBase, newSavepoint, newEntitiesPool);
-                }
+            // make all new entities persistent
+            if (!Database.SaveChanges(context))
+            {
+                return false;
+            }
 
-                // make all new entities persistent
-                if (!Database.SaveChanges(context))
+            // if there are entities whose ID are assigned only after insertion into database,
+            // then these entities need to be handled after all pushes and before a return
+            // the least one must do is to write the new entity id back into the respective domain object
+            foreach (IEntityCollectionMapping entityCollectionMappingBase in Mapper.Configuration.EntityMappings)
+            {
+                // the push fails when at least one push fails.
+                if (!PushUpdatesToContext(context, entityCollectionMappingBase, newSavepoint, force))
                 {
                     return false;
                 }
-
-                // if there are entities whose ID are assigned only after insertion into database,
-                // then these entities need to be handled after all pushes and before a return
-                // the least one must do is to write the new entity id back into the respective domain object
-                foreach (IEntityCollectionMapping entityCollectionMappingBase in Mapper.Configuration.EntityMappings)
-                {
-                    // the push fails when at least one push fails.
-                    if (!PushUpdatesToContext(context, entityCollectionMappingBase, newSavepoint, force))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
             }
+
+            return true;
         }
 
 
@@ -182,19 +173,18 @@ namespace EntityCache.Caching
             {
                 return false;
             }
-            using (DbContext context = Database.CreateDbContext())
+
+            using DbContext context = Database.CreateDbContext();
+            var newSavepoint = DateTime.UtcNow;
+            var newEntitiesPool = new ObjectPool();
+
+            PushNewEntitiesToContext<TCachedEntity>(context, newSavepoint, newEntitiesPool);
+            if (!Database.SaveChanges(context))
             {
-                var newSavepoint = DateTime.UtcNow;
-                var newEntitiesPool = new ObjectPool();
-
-                PushNewEntitiesToContext<TCachedEntity>(context, newSavepoint, newEntitiesPool);
-                if (!Database.SaveChanges(context))
-                {
-                    return false;
-                }
-
-                return PushUpdatesToContext<TCachedEntity>(context, newSavepoint, force);
+                return false;
             }
+
+            return PushUpdatesToContext<TCachedEntity>(context, newSavepoint, force);
         }
 
         public bool Push(ICachedEntity cachedEntity, bool force = false)
@@ -203,25 +193,24 @@ namespace EntityCache.Caching
             {
                 return false;
             }
-            using (DbContext context = Database.CreateDbContext())
+
+            using DbContext context = Database.CreateDbContext();
+            var newSavepoint = DateTime.UtcNow;
+            var newEntitiesPool = new ObjectPool();
+            IEntityCollectionMapping mapping = Mapper.Configuration.GetEntityMappingByCachedEntityType(cachedEntity.GetType());
+
+            if (cachedEntity.IsNew && mapping.AddCachedEntityToContext(context, cachedEntity, Mapper, newSavepoint, newEntitiesPool) == null)
             {
-                var newSavepoint = DateTime.UtcNow;
-                var newEntitiesPool = new ObjectPool();
-                IEntityCollectionMapping mapping = Mapper.Configuration.GetEntityMappingByCachedEntityType(cachedEntity.GetType());
-
-                if (cachedEntity.IsNew && mapping.AddCachedEntityToContext(context, cachedEntity, Mapper, newSavepoint, newEntitiesPool) == null)
-                {
-                    return false;
-                }
-
-                if (!Database.SaveChanges(context))
-                {
-                    return false;
-                }
-
-                return PushCachedEntityToContext(context, mapping, cachedEntity, newSavepoint, force) != null
-                    && Database.SaveChanges(context);
+                return false;
             }
+
+            if (!Database.SaveChanges(context))
+            {
+                return false;
+            }
+
+            return PushCachedEntityToContext(context, mapping, cachedEntity, newSavepoint, force) != null
+                   && Database.SaveChanges(context);
         }
 
         public bool Synchronize(Action<IEnumerable<PullConflicts>> resolveConflictsCallback)

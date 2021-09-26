@@ -1,14 +1,12 @@
-﻿using EntityCache.Caching;
-using EntityCache.demo.Database;
+﻿using EntityCache.demo.Database;
 using EntityCache.Mapping;
-using System;
 using EntityCache.demo.DomainObjects;
 
 namespace EntityCache.demo
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             Major mathsMaster = CreateMajor("Mathematics (Master of Science)");
             Major mathsBachelor = CreateMajor("Mathematics (Bachelor of Science)");

@@ -90,7 +90,7 @@ namespace EntityCache.Pooling
                 return entity;
             }
 
-            return default(TEntity);
+            return default;
         }
 
         public void RemoveAllEntities()

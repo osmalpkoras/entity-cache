@@ -14,7 +14,7 @@ namespace EntityCache.Exceptions
         /// <summary>
         ///     This is the domain object which holds a reference to a domain object, that has not been pushed to the database.
         /// </summary>
-        public ICachedEntity ICachedEntity { get; set; }
+        public ICachedEntity CachedEntity { get; set; }
 
         /// <summary>
         ///     This is the referenced domain object, which has not been pushed to the database.
@@ -33,7 +33,7 @@ namespace EntityCache.Exceptions
 
         public UnexpectedReferenceToNonexistentEntityException(ICachedEntity cachedEntity, ICachedEntity referencedCachedEntity)
         {
-            ICachedEntity = cachedEntity;
+            CachedEntity = cachedEntity;
             ReferencedCachedEntity = referencedCachedEntity;
             EntityId = cachedEntity.Id;
             ReferencedEntityId = referencedCachedEntity.Id;

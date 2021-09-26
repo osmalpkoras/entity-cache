@@ -12,7 +12,7 @@ namespace EntityCache.Interfaces
         DateTime LastPullTime { get; set; }
 
         //IEntity CreateEntityFromCachedEntity(DbContext context,
-        //                                         ICachedEntity cachedEntity,
+        //                                         CachedEntity cachedEntity,
         //                                         DateTime newSavepoint,
         //                                         ObjectPool newEntitiesPool);
 
@@ -50,7 +50,7 @@ namespace EntityCache.Interfaces
         void DeleteCachedEntity(IDataCache repository, ICachedEntity cachedEntity);
 
         //IEntity CopyCachedEntityToEntity(DbContext context,
-        //                                      ICachedEntity cachedEntity,
+        //                                      CachedEntity cachedEntity,
         //                                      IEntity entity,
         //                                      DateTime newSavepoint,
         //                                      bool force);
