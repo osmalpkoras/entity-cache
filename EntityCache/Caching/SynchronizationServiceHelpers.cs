@@ -9,14 +9,23 @@ namespace EntityCache.Caching
         public static void TakeLocalChanges(IEnumerable<PullConflicts> conflicts)
         {
             conflicts
-               .Where(conflict => !conflict.HasDeletionConflict) // if entity has been deleted remotely, we do nothing
-               .ForEach(conflict => conflict.ConflictedProperties.ForEach(conflictedProperty => { conflictedProperty.CachedFields.TakeLocal(); }));
+                .Where(conflict => !conflict.HasDeletionConflict) // if entity has been deleted remotely, we do nothing
+                .ForEach(conflict => conflict.ConflictedProperties.ForEach(conflictedProperty =>
+                                                                           {
+                                                                               conflictedProperty.CachedFields
+                                                                                   .TakeLocal();
+                                                                           }));
         }
+
         public static void DiscardLocalChanges(IEnumerable<PullConflicts> conflicts)
         {
             conflicts
-               .Where(conflict => !conflict.HasDeletionConflict) // if entity has been deleted remotely, we do nothing
-               .ForEach(conflict => conflict.ConflictedProperties.ForEach(conflictedProperty => { conflictedProperty.CachedFields.TakeSource(); }));
+                .Where(conflict => !conflict.HasDeletionConflict) // if entity has been deleted remotely, we do nothing
+                .ForEach(conflict => conflict.ConflictedProperties.ForEach(conflictedProperty =>
+                                                                           {
+                                                                               conflictedProperty.CachedFields
+                                                                                   .TakeSource();
+                                                                           }));
         }
     }
 }

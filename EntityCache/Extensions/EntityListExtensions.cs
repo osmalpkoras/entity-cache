@@ -6,9 +6,7 @@ namespace EntityCache.Extensions
 {
     public static class EntityListExtensions
     {
-        public static EntityList<TEntity> ToEntityList<TEntity>(this IEnumerable<TEntity> source) where TEntity : IEntity
-        {
-            return new EntityList<TEntity>(source);
-        }
+        public static EntityList<TEntity> ToEntityList<TEntity>(this IEnumerable<TEntity> source)
+            where TEntity : IEntity => new EntityList<TEntity>(source);
     }
 }

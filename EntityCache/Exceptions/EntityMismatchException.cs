@@ -13,11 +13,6 @@ namespace EntityCache.Exceptions
     [Serializable]
     public sealed class EntityMismatchException : Exception
     {
-        /// <summary>
-        ///     These are the entities that should have a matching id.
-        /// </summary>
-        public List<IEntity> Entities { get; set; }
-
         public EntityMismatchException(params IEntity[] entities)
         {
             Entities = entities.ToList();
@@ -25,7 +20,13 @@ namespace EntityCache.Exceptions
 
         private EntityMismatchException(SerializationInfo info, StreamingContext context)
             : base(info, context)
-        { }
+        {
+        }
+
+        /// <summary>
+        ///     These are the entities that should have a matching id.
+        /// </summary>
+        public List<IEntity> Entities { get; set; }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {

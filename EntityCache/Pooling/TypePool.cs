@@ -13,6 +13,8 @@ namespace EntityCache.Pooling
             Type = typeof(TType);
         }
 
+        public EntityList<TType> Objects { get; set; }
+
         public Type Type { get; }
         public IEntityList Collection => Objects;
 
@@ -23,19 +25,18 @@ namespace EntityCache.Pooling
 
         public void Add(IEntity entity)
         {
-            TType obj = Objects.Find(o => o.Id == entity.Id);
+            var obj = Objects.Find(o => o.Id == entity.Id);
             if (obj != null)
             {
                 throw new EntityDuplicateException(obj, entity);
             }
-            Objects.Add((TType)entity);
+
+            Objects.Add((TType) entity);
         }
 
         public void Remove(IEntity entity)
         {
-            Objects.Remove((TType)entity);
+            Objects.Remove((TType) entity);
         }
-
-        public EntityList<TType> Objects { get; set; }
     }
 }

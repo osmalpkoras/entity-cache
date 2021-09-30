@@ -1,7 +1,7 @@
-﻿using EntityCache.Mapping;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
+using EntityCache.Mapping;
 using EntityCache.Pooling;
+using Microsoft.EntityFrameworkCore;
 
 namespace EntityCache.Interfaces
 {
@@ -18,10 +18,10 @@ namespace EntityCache.Interfaces
 
 
         IEntity AddCachedEntityToContext(DbContext context,
-                                              ICachedEntity entity,
-                                              Mapper mapper,
-                                              DateTime newSavepoint,
-                                              ObjectPool newEntitiesPool);
+                                         ICachedEntity entity,
+                                         Mapper mapper,
+                                         DateTime newSavepoint,
+                                         ObjectPool newEntitiesPool);
 
         /// <summary>
         ///     Using the given context, this returns the entity with the given id from the DbSet selected for this mapping.
@@ -43,7 +43,10 @@ namespace EntityCache.Interfaces
         /// </summary>
         /// <param name="context">the context to be used. this is used to access the DbSet and entities.</param>
         /// <param name="includeDeletedEntities">whether deleted entities should be include in the iteration</param>
-        /// <param name="time">the action will be executed only on entities whose last savepoint is newer than this specified time value.</param>
+        /// <param name="time">
+        ///     the action will be executed only on entities whose last savepoint is newer than this specified time
+        ///     value.
+        /// </param>
         /// <param name="action">the action to be executed on the entities</param>
         void ForEachEntity(DbContext context, bool includeDeletedEntities, DateTime time, Action<IEntity> action);
 
@@ -54,6 +57,5 @@ namespace EntityCache.Interfaces
         //                                      IEntity entity,
         //                                      DateTime newSavepoint,
         //                                      bool force);
-
     }
 }

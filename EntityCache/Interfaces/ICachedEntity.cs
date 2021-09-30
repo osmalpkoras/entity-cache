@@ -8,7 +8,8 @@ namespace EntityCache.Interfaces
 {
     public interface ICachedEntity : IEntity
     {
-        public bool IsNew { get; set;  }
+        public bool IsNew { get; set; }
+
         // soll als statisches Feld in jeder Klasse implementiert werden
         public bool IsDirty { get; }
 
@@ -17,24 +18,28 @@ namespace EntityCache.Interfaces
         void ForEachConflictingProperty(Action<ICachedField, FieldInfo> action);
 
 
-        public static bool ArePropertiesDirty<TCachedEntity>(TCachedEntity cachedEntity, List<FieldInfo> fields) where TCachedEntity : ICachedEntity
+        public static bool ArePropertiesDirty<TCachedEntity>(TCachedEntity cachedEntity, List<FieldInfo> fields)
+            where TCachedEntity : ICachedEntity
         {
             if (cachedEntity != null && !cachedEntity.IsNew)
             {
                 // check if properties of this entity are dirty
-                return fields.Select(fieldInfo => (ICachedField)fieldInfo.GetValue(cachedEntity)).Any(field => field.IsDirty());
+                return fields.Select(fieldInfo => (ICachedField) fieldInfo.GetValue(cachedEntity))
+                             .Any(field => field.IsDirty());
             }
 
             return false;
         }
 
-        public static bool ArePropertiesConflicted<TCachedEntity>(TCachedEntity cachedEntity) where TCachedEntity : ICachedEntity
+        public static bool ArePropertiesConflicted<TCachedEntity>(TCachedEntity cachedEntity)
+            where TCachedEntity : ICachedEntity
         {
             if (cachedEntity != null)
             {
-                List<FieldInfo> fields = GetCachedFieldInfos(cachedEntity.GetType());
+                var fields = GetCachedFieldInfos(cachedEntity.GetType());
                 // check if properties of this entity are dirty
-                return fields.Select(fieldInfo => (ICachedField)fieldInfo.GetValue(cachedEntity)).Any(field => field.IsConflicted());
+                return fields.Select(fieldInfo => (ICachedField) fieldInfo.GetValue(cachedEntity))
+                             .Any(field => field.IsConflicted());
             }
 
             return false;
@@ -42,7 +47,9 @@ namespace EntityCache.Interfaces
 
         public static List<FieldInfo> GetCachedFieldInfos(Type entityType)
         {
-            return entityType.GetFields(ITypeMapping.PRIVATE_MEMBER_ACCESSOR_BINDING_ATTRIBUTES).Where(info => info.FieldType.IsAssignableTo<ICachedField>()).ToList();
+            return entityType.GetFields(ITypeMapping.PRIVATE_MEMBER_ACCESSOR_BINDING_ATTRIBUTES)
+                             .Where(info => info.FieldType.IsAssignableTo<ICachedField>())
+                             .ToList();
         }
     }
 }

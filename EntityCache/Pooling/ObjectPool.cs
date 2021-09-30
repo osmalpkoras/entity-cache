@@ -37,8 +37,9 @@ namespace EntityCache.Pooling
             {
                 Pool.RemoveAt(index);
             }
-            Type genericTypePoolType = typeof(TypePool<>).MakeGenericType(type);
-            var pool = (ITypePool)genericTypePoolType.GetConstructor(Type.EmptyTypes)?.Invoke(new object[] { });
+
+            var genericTypePoolType = typeof(TypePool<>).MakeGenericType(type);
+            var pool = (ITypePool) genericTypePoolType.GetConstructor(Type.EmptyTypes)?.Invoke(new object[] { });
             Pool.Add(pool);
             return pool;
         }
@@ -53,7 +54,7 @@ namespace EntityCache.Pooling
 
         public EntityList<TType> GetPool<TType>() where TType : IEntity
         {
-            return ((TypePool<TType>)Pool.FirstOrDefault(p => p.Type == typeof(TType)))?.Objects;
+            return ((TypePool<TType>) Pool.FirstOrDefault(p => p.Type == typeof(TType)))?.Objects;
         }
 
         /// <summary>
@@ -76,10 +77,11 @@ namespace EntityCache.Pooling
             if (pool == null)
             {
                 // we use the default (parameterless) constructor for creation of a new type.
-                Type poolType = typeof(TypePool<>).MakeGenericType(type);
-                pool = (ITypePool)Activator.CreateInstance(poolType);
+                var poolType = typeof(TypePool<>).MakeGenericType(type);
+                pool = (ITypePool) Activator.CreateInstance(poolType);
                 Pool.Add(pool);
             }
+
             pool.Add(obj);
         }
     }

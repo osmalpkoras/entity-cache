@@ -10,22 +10,19 @@ namespace EntityCache.Mapping
     /// </summary>
     public class CachedFieldMapping : PropertyMapping<FieldInfo>
     {
-        public CachedFieldMapping(FieldInfo cachedEntityMember, PropertyInfo entityProperty) : base(cachedEntityMember, entityProperty)
+        public CachedFieldMapping(FieldInfo cachedEntityMember, PropertyInfo entityProperty)
+            : base(cachedEntityMember, entityProperty)
         {
             CachedEntityType = cachedEntityMember.FieldType.GetGenericArguments()[0];
             MapsToBackingField = true;
         }
 
-        public ICachedField GetPropertyAsCachedField(ICachedEntity cachedEntity)
-        {
-            return (ICachedField)CachedEntityMember.GetValue(cachedEntity);
-        }
+        public ICachedField GetPropertyAsCachedField(ICachedEntity cachedEntity) =>
+            (ICachedField) CachedEntityMember.GetValue(cachedEntity);
 
 
-        public override object GetValue(ICachedEntity cachedEntity)
-        {
-            return GetPropertyAsCachedField(cachedEntity).GetValueAsObject();
-        }
+        public override object GetValue(ICachedEntity cachedEntity) =>
+            GetPropertyAsCachedField(cachedEntity).GetValueAsObject();
 
         public override void SetValue(ICachedEntity cachedEntity, object value)
         {

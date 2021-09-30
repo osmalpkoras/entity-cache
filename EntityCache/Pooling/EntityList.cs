@@ -11,11 +11,13 @@ namespace EntityCache.Pooling
         {
         }
 
-        public EntityList(IEnumerable<TEntity> collection) : base(collection)
+        public EntityList(IEnumerable<TEntity> collection)
+            : base(collection)
         {
         }
 
-        public EntityList(int capacity) : base(capacity)
+        public EntityList(int capacity)
+            : base(capacity)
         {
         }
 
@@ -26,14 +28,34 @@ namespace EntityCache.Pooling
             return this.FirstOrDefault(vo => vo.Id == id);
         }
 
-        public IEnumerable GetRemovedEntities()
-        {
-            return RemovedEntities;
-        }
+        public IEnumerable GetRemovedEntities() => RemovedEntities;
 
         public void ClearRemovedEntities()
         {
             RemovedEntities.Clear();
+        }
+
+        public void AddEntity(IEntity entity)
+        {
+            AddEntity((TEntity) entity);
+        }
+
+        public bool RemoveEntity(string id)
+        {
+            var entityIndex = FindIndex(e => e.Id == id);
+            if (entityIndex > -1)
+            {
+                RemovedEntities.Add(this[entityIndex]);
+                RemoveAt(entityIndex);
+            }
+
+            return true;
+        }
+
+        public void RemoveAllEntities()
+        {
+            RemovedEntities.AddRange(this);
+            Clear();
         }
 
         public void AddEntity(TEntity entity)
@@ -44,59 +66,30 @@ namespace EntityCache.Pooling
             }
         }
 
-        public void AddEntity(IEntity entity)
-        {
-            AddEntity((TEntity)entity);
-        }
-
         public void AddEntities(IEnumerable<TEntity> collection)
         {
-            foreach (TEntity entity in collection)
+            foreach (var entity in collection)
             {
                 AddEntity(entity);
             }
         }
 
-        public bool RemoveEntity(TEntity entity)
-        {
-            return RemoveEntity(entity?.Id);
-        }
+        public bool RemoveEntity(TEntity entity) => RemoveEntity(entity?.Id);
 
-        public bool RemoveEntity(string id)
-        {
-            int entityIndex = FindIndex(e => e.Id == id);
-            if (entityIndex > -1)
-            {
-                RemovedEntities.Add(this[entityIndex]);
-                RemoveAt(entityIndex);
-            }
-
-            return true;
-        }
-
-        public TEntity UndoRemoveEntity(TEntity entity)
-        {
-            return UndoRemoveEntity(entity?.Id);
-        }
+        public TEntity UndoRemoveEntity(TEntity entity) => UndoRemoveEntity(entity?.Id);
 
         public TEntity UndoRemoveEntity(string id)
         {
-            int entityIndex = RemovedEntities.FindIndex(e => e.Id == id);
+            var entityIndex = RemovedEntities.FindIndex(e => e.Id == id);
             if (entityIndex > -1)
             {
-                TEntity entity = RemovedEntities[entityIndex];
+                var entity = RemovedEntities[entityIndex];
                 Add(entity);
                 RemovedEntities.RemoveAt(entityIndex);
                 return entity;
             }
 
             return default;
-        }
-
-        public void RemoveAllEntities()
-        {
-            RemovedEntities.AddRange(this);
-            Clear();
         }
     }
 }

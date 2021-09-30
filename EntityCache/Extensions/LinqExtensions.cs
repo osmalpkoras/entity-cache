@@ -10,7 +10,7 @@ namespace EntityCache.Extensions
             if (enumerable == null) throw new ArgumentException(nameof(enumerable));
             if (action == null) throw new ArgumentException(nameof(action));
 
-            foreach (T element in enumerable)
+            foreach (var element in enumerable)
             {
                 action(element);
             }

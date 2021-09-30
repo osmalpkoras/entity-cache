@@ -11,6 +11,20 @@ namespace EntityCache.Exceptions
     [Serializable]
     public sealed class UnexpectedReferenceToNonexistentEntityException : Exception
     {
+        public UnexpectedReferenceToNonexistentEntityException(ICachedEntity cachedEntity,
+                                                               ICachedEntity referencedCachedEntity)
+        {
+            CachedEntity = cachedEntity;
+            ReferencedCachedEntity = referencedCachedEntity;
+            EntityId = cachedEntity.Id;
+            ReferencedEntityId = referencedCachedEntity.Id;
+        }
+
+        private UnexpectedReferenceToNonexistentEntityException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+
         /// <summary>
         ///     This is the domain object which holds a reference to a domain object, that has not been pushed to the database.
         /// </summary>
@@ -30,18 +44,6 @@ namespace EntityCache.Exceptions
         ///     This is the id of the non existent entity, that has been referenced.
         /// </summary>
         public string ReferencedEntityId { get; set; }
-
-        public UnexpectedReferenceToNonexistentEntityException(ICachedEntity cachedEntity, ICachedEntity referencedCachedEntity)
-        {
-            CachedEntity = cachedEntity;
-            ReferencedCachedEntity = referencedCachedEntity;
-            EntityId = cachedEntity.Id;
-            ReferencedEntityId = referencedCachedEntity.Id;
-        }
-
-        private UnexpectedReferenceToNonexistentEntityException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        { }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {

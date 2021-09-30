@@ -5,7 +5,6 @@ namespace EntityCache.Interfaces
 {
     public interface IPropertyMapping
     {
-
         PropertyInfo EntityProperty { get; }
         Type EntityType { get; }
         Type CachedEntityType { get; }

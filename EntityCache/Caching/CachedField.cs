@@ -31,7 +31,8 @@ namespace EntityCache.Caching
         /// <summary>
         ///     if this field had been modified and we tried to pull from the database and noticed a conflict,
         ///     this contains the value that is written to the database.
-        ///     the user now needs to decide: does he keep his update? does he keep the database value? or does he reset to the original value?
+        ///     the user now needs to decide: does he keep his update? does he keep the database value? or does he reset to the
+        ///     original value?
         /// </summary>
         private TType _externalChange;
 
@@ -65,11 +66,11 @@ namespace EntityCache.Caching
         }
 
         /// <summary>
-        ///     Gives access to the underyling value much like the Value property for nullable types.
+        ///     Gives access to the underlying value much like the Value property for nullable types.
         /// </summary>
         public TType Value
         {
-            get => (TType)GetValueAsObject();
+            get => (TType) GetValueAsObject();
             set => Set(value);
         }
 
@@ -82,7 +83,7 @@ namespace EntityCache.Caching
 
         public void Reset(object value)
         {
-            _cachedSourceOfTruth = (TType)value;
+            _cachedSourceOfTruth = (TType) value;
             Reset();
         }
 
@@ -91,14 +92,39 @@ namespace EntityCache.Caching
             Reset(_localChange);
         }
 
-        public object GetValueAsObject()
+        public object GetValueAsObject() => _state == State.Modified ? _localChange : _cachedSourceOfTruth;
+
+        public void SetValueFromObject(object value) => Set((TType) value);
+
+        public void PullFromObject(object value) => Pull((TType) value);
+
+        public void TakeSource()
         {
-            return _state == State.Modified ? _localChange : _cachedSourceOfTruth;
+            if (IsConflicted())
+            {
+                // when solving a conflict, we apply the external change as a local change, because we still remain dirty
+                _state = State.Modified;
+                _localChange = _externalChange;
+                _externalChange = default;
+            }
         }
 
-        public void SetValueFromObject(object value) => Set((TType)value);
+        public void TakeLocal()
+        {
+            if (IsConflicted())
+            {
+                _state = State.Modified;
+                _externalChange = default;
+            }
+        }
 
-        /// <inheritdoc cref="SetValueFromObject(object)"/>
+        public bool IsDirty() => _state == State.Modified || IsConflicted();
+
+        public bool IsConflicted() => _state == State.Conflicted;
+
+        public bool Equals(CachedField<TType> other) => other != null && Equals(Value, other.Value);
+
+        /// <inheritdoc cref="SetValueFromObject(object)" />
         public void Set(TType value)
         {
             switch (_state)
@@ -133,8 +159,7 @@ namespace EntityCache.Caching
             }
         }
 
-        public void PullFromObject(object value) => Pull((TType)value);
-        /// <inheritdoc cref="PullFromObject(object)"/>
+        /// <inheritdoc cref="PullFromObject(object)" />
         public void Pull(TType value)
         {
             if (_state == State.Conflicted)
@@ -173,74 +198,28 @@ namespace EntityCache.Caching
                     break;
             }
         }
-        public void TakeSource()
-        {
-            if (IsConflicted())
-            {
-                // when solving a conflict, we apply the external change as a local change, because we still remain dirty
-                _state = State.Modified;
-                _localChange = _externalChange;
-                _externalChange = default;
-            }
-        }
-
-        public void TakeLocal()
-        {
-            if (IsConflicted())
-            {
-                _state = State.Modified;
-                _externalChange = default;
-            }
-        }
-
-        public bool IsDirty()
-        {
-            return _state == State.Modified || IsConflicted();
-        }
-
-        public bool IsConflicted()
-        {
-            return _state == State.Conflicted;
-        }
-
-        public bool Equals(CachedField<TType> other)
-        {
-            return other != null && Equals(Value, other.Value);
-        }
 
         public override bool Equals(object obj)
         {
             return obj switch
             {
-                TType value => Equals(Value, value),
+                TType value                     => Equals(Value, value),
                 CachedField<TType> backingField => Equals(backingField),
-                _ => false
+                _                               => false
             };
         }
 
-        public override string ToString()
-        {
-            return GetValueAsObject().ToString();
-        }
+        public override string ToString() => GetValueAsObject().ToString();
 
-        public override int GetHashCode()
-        {
-            return Value.GetHashCode();
-        }
+        public override int GetHashCode() => Value.GetHashCode();
 
-        public static implicit operator TType(CachedField<TType> field)
-        {
-            return field.Value;
-        }
+        public static implicit operator TType(CachedField<TType> field) => field.Value;
 
         /// <summary>
         ///     Do not use this implicit type conversion to set/update the value of a backing field,
         ///     because a conversion always creates a new instance.
         /// </summary>
         /// <param name="value">The value to initialize a new <see cref="CachedField{TType}" /> instance with</param>
-        public static implicit operator CachedField<TType>(TType value)
-        {
-            return new CachedField<TType>(value);
-        }
+        public static implicit operator CachedField<TType>(TType value) => new CachedField<TType>(value);
     }
 }

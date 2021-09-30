@@ -10,16 +10,14 @@ namespace EntityCache.Mapping
     /// </summary>
     public class GenericPropertyMapping : PropertyMapping<PropertyInfo>
     {
-        public GenericPropertyMapping(PropertyInfo cachedEntityMember, PropertyInfo entityProperty) : base(cachedEntityMember, entityProperty)
+        public GenericPropertyMapping(PropertyInfo cachedEntityMember, PropertyInfo entityProperty)
+            : base(cachedEntityMember, entityProperty)
         {
             CachedEntityType = cachedEntityMember.PropertyType;
         }
 
 
-        public override object GetValue(ICachedEntity cachedEntity)
-        {
-            return CachedEntityMember.GetValue(cachedEntity);
-        }
+        public override object GetValue(ICachedEntity cachedEntity) => CachedEntityMember.GetValue(cachedEntity);
 
         public override void SetValue(ICachedEntity cachedEntity, object value)
         {

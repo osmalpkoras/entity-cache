@@ -11,6 +11,17 @@ namespace EntityCache.Exceptions
     [Serializable]
     public sealed class EntityDuplicateException : Exception
     {
+        public EntityDuplicateException(IEntity existingEntity, IEntity duplicateEntity)
+        {
+            ExistingEntity = existingEntity;
+            DuplicateEntity = duplicateEntity;
+        }
+
+        private EntityDuplicateException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+
         /// <summary>
         ///     This is the already existing entity.
         /// </summary>
@@ -20,16 +31,6 @@ namespace EntityCache.Exceptions
         ///     This is the entity duplicate
         /// </summary>
         public IEntity DuplicateEntity { get; set; }
-
-        public EntityDuplicateException(IEntity existingEntity, IEntity duplicateEntity)
-        {
-            ExistingEntity = existingEntity;
-            DuplicateEntity = duplicateEntity;
-        }
-
-        private EntityDuplicateException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        { }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
